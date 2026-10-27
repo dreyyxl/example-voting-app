@@ -1,0 +1,93 @@
+name: Voting App CI/CD
+
+on:
+  push:
+    branches: [main, feature/github-actions-cicd]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build and start application
+        run: docker compose up -d --build
+
+      - name: Run integration test
+        run: ./tests/integration-test.sh
+
+      - name: Show logs if tests fail
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down -v
+
+  security:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+
+    strategy:
+      matrix:
+        service: [vote, result, worker]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t "voting-${{ matrix.service }}:scan" "./${{ matrix.service }}"
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: voting-${{ matrix.service }}:scan
+          format: table
+          exit-code: '1'
+          severity: CRITICAL
+          vuln-type: os,library
+
+  publish:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        service: [vote, result, worker]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/voting-${{ matrix.service }}:${{ github.sha }}
