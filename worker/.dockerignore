@@ -1,0 +1,28 @@
+# .NET build output
+bin/
+obj/
+
+# Environment files and secrets
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+
+# Local development settings
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Git metadata
+.git/
+.gitignore
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Operating system files
+.DS_Store
+Thumbs.db
