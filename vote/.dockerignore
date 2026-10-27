@@ -1,0 +1,27 @@
+# Environment files and secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+
+# Python virtual environments
+.venv/
+venv/
+
+# Git metadata
+.git/
+.gitignore
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Local testing files
+.pytest_cache/
+.coverage
