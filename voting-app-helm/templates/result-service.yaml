@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: result
+spec:
+  type: {{ .Values.result.service.type }}
+  selector:
+    app: result
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: tcp
+      port: {{ .Values.result.service.port }}
+      targetPort: {{ .Values.result.containerPort }}
+      nodePort: {{ .Values.result.service.nodePort }}
